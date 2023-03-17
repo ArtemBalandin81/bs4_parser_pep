@@ -30,7 +30,6 @@
 """
 import logging
 import re
-from pathlib import Path
 from urllib.parse import urljoin
 
 import requests_cache
@@ -38,8 +37,9 @@ from bs4 import BeautifulSoup
 from tqdm import tqdm
 
 from configs import configure_argument_parser, configure_logging
-from constants import (BASE_DIR, EXPECTED_STATUS, MAIN_DOC_URL, PATTERN_STATUS,
-                       PATTERN_TYPE, PEPS_URL)
+from constants import (
+    BASE_DIR, EXPECTED_STATUS, MAIN_DOC_URL, PATTERN_STATUS, PEPS_URL
+)
 from outputs import control_output
 from utils import find_tag, get_response
 
@@ -196,6 +196,7 @@ def main():
     if results is not None:
         control_output(results, args)
     logging.info('Парсер завершил работу.')
+
 
 if __name__ == '__main__':
     main()

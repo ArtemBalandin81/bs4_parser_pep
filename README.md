@@ -40,8 +40,13 @@ pip install -r requirements.txt
 (venv) ...$ python main.py -h
 ```
 
+## Используемые технологии:
 
-### Некоторые примеры запросов парсера
+- Python 3.7
+- Html
+- beautifulsoup4 
+
+## Некоторые примеры запросов парсера
 
 Очистить кэш:
 
@@ -86,4 +91,4 @@ pip install -r requirements.txt
 ```
 
 ### Автор
-Артем Баландин
+[Артем Баландин](https://github.com/ArtemBalandin81)

@@ -8,7 +8,7 @@ PARSER_FILE = 'file'
 PARSER_PRETTY = 'pretty'
 RESULTS_DIR = BASE_DIR / 'results'
 
-INFO_ALL_VERSHIONS_NOT_FOUND = '"All versions" не найдены в {} {}'
+INFO_ALL_VERSHIONS_NOT_FOUND = '"All versions" не найдены.'
 INFO_ARGS = 'Аргументы командной строки {}'
 INFO_DIFFERENT_STATUS = (
     '\nНесовпадающие статусы:\n{}'

@@ -61,10 +61,8 @@ def whats_new(session):
      и достанете из них справочную информацию: имя автора (редактора) статьи"""
     whats_new_url = urljoin(MAIN_DOC_URL, 'whatsnew/')
     soup = get_soup(session, whats_new_url)
-    main_div = find_tag(soup, 'section', attrs={'id': 'what-s-new-in-python'})
-    div_with_ul = find_tag(main_div, 'div', attrs={'class': 'toctree-wrapper'})
-    sections_by_python = div_with_ul.find_all(
-        'li', attrs={'class': 'toctree-l1'}
+    sections_by_python = soup.select(
+        '#what-s-new-in-python div.toctree-wrapper li.toctree-l1'
     )
     results = [('Ссылка на статью', 'Заголовок', 'Редактор, Автор')]
     for section in tqdm(sections_by_python, desc='sections_by_python'):
@@ -90,7 +88,7 @@ def latest_versions(session):
             a_tags = ul.find_all('a')
             break
     else:
-        raise ParserFindTagException(INFO_ALL_VERSHIONS_NOT_FOUND(tag, attrs))
+        raise ParserFindTagException(INFO_ALL_VERSHIONS_NOT_FOUND)
     results = [('Ссылка на документацию', 'Версия', 'Статус')]
     pattern = r'Python (?P<version>\d\.\d+) \((?P<status>.*)\)'
     for a_tag in a_tags:
@@ -109,10 +107,7 @@ def download(session):
     """Загружает документацию к Python."""
     downloads_url = urljoin(MAIN_DOC_URL, 'download.html')
     soup = get_soup(session, downloads_url)
-    table_tag = find_tag(soup, 'table', attrs={'class': 'docutils'})
-    pdf_a4_tag = find_tag(
-        table_tag, 'a', {'href': re.compile(r'.+pdf-a4\.zip$')}
-    )
+    pdf_a4_tag = soup.select_one('table.docutils a[href$="pdf-a4.zip"]')
     pdf_a4_link = pdf_a4_tag['href']
     archive_url = urljoin(downloads_url, pdf_a4_link)
     filename = archive_url.split('/')[-1]

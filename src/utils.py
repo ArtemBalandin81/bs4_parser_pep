@@ -1,7 +1,5 @@
 from http import HTTPStatus
 
-from requests import RequestException
-
 from constants import INFO_TAG_ERROR, INFO_URL_UNAVAILABLE
 from exceptions import ParserFindTagException
 

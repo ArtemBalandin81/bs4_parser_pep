@@ -2,6 +2,7 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).parent
 DATETIME_FORMAT = '%Y-%m-%d_%H-%M-%S'
+DOWNLOAD_DIR = 'downloads'
 LOG_DIR = BASE_DIR / 'logs'
 LOG_FILE = LOG_DIR / 'parser.log'
 PARSER_FILE = 'file'
@@ -17,7 +18,7 @@ INFO_DIFFERENT_STATUS = (
 )
 INFO_DOWNLOAD = 'Архив был загружен и сохранён {}'
 INFO_FINISH = 'Парсер завершил работу.'
-INFO_URL_UNAVAILABLE = 'Страница {} не доступна'
+INFO_URL_UNAVAILABLE = 'Страница {} не доступна {}'
 INFO_SAVE = 'Файл с результатами был сохранён {}'
 INFO_START = 'Парсер запущен.'
 INFO_TAG_ERROR = 'Не найден тег {} {}'

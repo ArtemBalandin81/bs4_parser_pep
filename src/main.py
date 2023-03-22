@@ -37,10 +37,10 @@ import requests_cache
 from tqdm import tqdm
 
 from configs import configure_argument_parser, configure_logging
-from constants import (BASE_DIR, EXPECTED_STATUS, INFO_ALL_VERSHIONS_NOT_FOUND,
-                       INFO_ARGS, INFO_DIFFERENT_STATUS, INFO_DOWNLOAD,
-                       INFO_ERROR, INFO_FINISH, INFO_START,
-                       MAIN_DOC_URL, PEPS_URL)
+from constants import (BASE_DIR, DOWNLOAD_DIR, EXPECTED_STATUS,
+                       INFO_ALL_VERSHIONS_NOT_FOUND, INFO_ARGS,
+                       INFO_DIFFERENT_STATUS, INFO_DOWNLOAD, INFO_ERROR,
+                       INFO_FINISH, INFO_START, MAIN_DOC_URL, PEPS_URL)
 from exceptions import ParserFindTagException
 from outputs import control_output
 from utils import find_tag, get_soup
@@ -50,29 +50,34 @@ def whats_new(session):
     """Собирает ссылки на статьи об изменениях между основными версиями Python
      и достанете из них справочную информацию: имя автора (редактора) статьи"""
     whats_new_url = urljoin(MAIN_DOC_URL, 'whatsnew/')
-    soup = get_soup(session, whats_new_url)
-    sections_by_python = soup.select(
-        '#what-s-new-in-python div.toctree-wrapper li.toctree-l1'
+    sections_by_python = get_soup(session, whats_new_url).select(
+        '#what-s-new-in-python div.toctree-wrapper li.toctree-l1 >a'
     )
     results = [('Ссылка на статью', 'Заголовок', 'Редактор, Автор')]
+    messages = []
     for section in tqdm(sections_by_python, desc='sections_by_python'):
-        version_a_tag = find_tag(section, 'a')
-        href = version_a_tag['href']
+        href = section['href']
         version_link = urljoin(whats_new_url, href)
-        soup = get_soup(session, version_link)
+        try:
+            soup = get_soup(session, version_link)
+        except ConnectionError as error:
+            messages.append(INFO_URL_UNAVAILABLE.format(version_link, error))
+            continue
         h1 = find_tag(soup, 'h1')
         dl = find_tag(soup, 'dl')
         results.append(
             (version_link, h1.text.encode("utf-8"), dl.text.encode("utf-8"))
         )
+    for log in messages:
+        logging.info(log)
     return results
 
 
 def latest_versions(session):
     """Собирает ссылки на документацию различных версий Python и их статус."""
-    soup = get_soup(session, MAIN_DOC_URL)
-    sidebar = find_tag(soup, 'div', attrs={'class': 'sphinxsidebarwrapper'})
-    ul_tags = sidebar.find_all('ul')
+    ul_tags = get_soup(session, MAIN_DOC_URL).select(
+        'div.sphinxsidebarwrapper ul'
+    )
     for ul in ul_tags:
         if 'All versions' in ul.text:
             a_tags = ul.find_all('a')
@@ -102,7 +107,7 @@ def download(session):
         soup.select_one('table.docutils a[href$="pdf-a4.zip"]')['href']
     )
     filename = archive_url.split('/')[-1]
-    downloads_dir = BASE_DIR / 'downloads'
+    downloads_dir = BASE_DIR / DOWNLOAD_DIR
     downloads_dir.mkdir(exist_ok=True)
     archive_path = downloads_dir / filename
     response = session.get(archive_url)
@@ -126,22 +131,26 @@ def pep(session):
             'a', attrs={'class': 'pep reference internal'}
         )['href']
         pep_link = urljoin(PEPS_URL, pep_reference)
-        pep_soup = get_soup(session, pep_link)
+        try:
+            pep_soup = get_soup(session, pep_link)
+        except ConnectionError as error:
+            messages.append(INFO_URL_UNAVAILABLE.format(pep_link, error))
+            continue
         field_list_simple = pep_soup.find(
             'dl', attrs={'class': 'rfc2822 field-list simple'}
         )
-        pep_status = re.search(pattern_status, field_list_simple.text)
-        if pep_status[1] not in EXPECTED_STATUS[pep_table_status]:
+        pep_status = re.search(pattern_status, field_list_simple.text)[1]
+        if pep_status not in EXPECTED_STATUS[pep_table_status]:
             messages.append(
                 INFO_DIFFERENT_STATUS.format(
                     pep_link,
-                    {pep_status[1]},
+                    {pep_status},
                     {EXPECTED_STATUS[pep_table_status]}
                 )
             )
-        total_status[pep_status[1]] += 1
-    if len(messages) != 0:
-        logging.info(*messages)
+        total_status[pep_status] += 1
+    for log in messages:
+        logging.info(log)
     return [
         ('Status', 'Quantities'),
         *total_status.items(),

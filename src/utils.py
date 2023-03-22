@@ -1,16 +1,17 @@
 from bs4 import BeautifulSoup
-
+from requests import RequestException
 from constants import INFO_TAG_ERROR, INFO_URL_UNAVAILABLE
 from exceptions import ParserFindTagException
 
 
 def get_response(session, url, charset='utf-8'):
     """Реализует перехват ошибки соединения и записывает ее в логи."""
-    response = session.get(url)
-    response.encoding = charset
-    if response is None:
+    try:
+        response = session.get(url)
+        response.encoding = charset
+        return response
+    except RequestException:
         raise ConnectionError(INFO_URL_UNAVAILABLE.format(url))
-    return response
 
 
 def find_tag(soup, tag, attrs=None):

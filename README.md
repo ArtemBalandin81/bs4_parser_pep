@@ -43,7 +43,6 @@ pip install -r requirements.txt
 ## Используемые технологии:
 
 - Python 3.7
-- Html
 - beautifulsoup4 
 
 ## Некоторые примеры запросов парсера

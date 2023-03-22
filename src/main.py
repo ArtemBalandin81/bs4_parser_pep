@@ -30,30 +30,20 @@
 """
 import logging
 import re
+from collections import defaultdict
 from urllib.parse import urljoin
 
 import requests_cache
-from bs4 import BeautifulSoup
 from tqdm import tqdm
 
 from configs import configure_argument_parser, configure_logging
-from constants import (
-    BASE_DIR, EXPECTED_STATUS, INFO_ALL_VERSHIONS_NOT_FOUND, INFO_ARGS,
-    INFO_DIFFERENT_STATUS, INFO_DOWNLOAD, INFO_ERROR, INFO_FINISH, INFO_START,
-    INFO_URL_UNAVAILABLE, MAIN_DOC_URL, PEPS_URL
-)
+from constants import (BASE_DIR, EXPECTED_STATUS, INFO_ALL_VERSHIONS_NOT_FOUND,
+                       INFO_ARGS, INFO_DIFFERENT_STATUS, INFO_DOWNLOAD,
+                       INFO_ERROR, INFO_FINISH, INFO_START,
+                       INFO_URL_UNAVAILABLE, MAIN_DOC_URL, PEPS_URL)
 from exceptions import ParserFindTagException
 from outputs import control_output
-from utils import find_tag, get_response
-
-
-def get_soup(session, url):
-    """Готовит суп"""
-    response = get_response(session, url)
-    if response is None:
-        logging.info(INFO_URL_UNAVAILABLE.format(url))
-        return
-    return BeautifulSoup(response.text, features='lxml')
+from utils import find_tag, get_soup
 
 
 def whats_new(session):
@@ -107,9 +97,10 @@ def download(session):
     """Загружает документацию к Python."""
     downloads_url = urljoin(MAIN_DOC_URL, 'download.html')
     soup = get_soup(session, downloads_url)
-    pdf_a4_tag = soup.select_one('table.docutils a[href$="pdf-a4.zip"]')
-    pdf_a4_link = pdf_a4_tag['href']
-    archive_url = urljoin(downloads_url, pdf_a4_link)
+    archive_url = urljoin(
+        downloads_url,
+        soup.select_one('table.docutils a[href$="pdf-a4.zip"]')['href']
+    )
     filename = archive_url.split('/')[-1]
     downloads_dir = BASE_DIR / 'downloads'
     downloads_dir.mkdir(exist_ok=True)
@@ -124,10 +115,11 @@ def pep(session):
     """Парсит статусы PEP: считает количество PEP в каждом статусе
      и общее количество PEP."""
     pattern_status = r'Status:\n(\w+)'
-    total_status = {}
+    total_status = defaultdict(int)
     soup = get_soup(session, PEPS_URL)
     numerical_index = soup.find('section', attrs={'id': 'numerical-index'})
     pep_string = numerical_index.find_all('tr')
+    messages = []
     for item in tqdm(pep_string[1:], desc='calculate total_status'):
         pep_table_status = item.find('abbr').text[1:]
         pep_reference = item.find(
@@ -139,20 +131,19 @@ def pep(session):
             'dl', attrs={'class': 'rfc2822 field-list simple'}
         )
         pep_status = re.search(pattern_status, field_list_simple.text)
-        if pep_status.group(1) not in EXPECTED_STATUS[pep_table_status]:
-            logging.info(
+        if pep_status[1] not in EXPECTED_STATUS[pep_table_status]:
+            messages.append(
                 INFO_DIFFERENT_STATUS.format(
                     pep_link,
-                    {pep_status.group(1)},
+                    {pep_status[1]},
                     {EXPECTED_STATUS[pep_table_status]}
                 )
             )
-        if pep_status.group(1) not in total_status.keys():
-            total_status[pep_status.group(1)] = 1
-        else:
-            total_status[pep_status.group(1)] += 1
+        total_status[pep_status[1]] += 1
+    if len(messages) != 0:
+        logging.info(*messages)
     return [
-        ('Статус', 'Количество'),
+        ('Status', 'Quantities'),
         *total_status.items(),
         ('Total', sum(total_status.values()))
     ]

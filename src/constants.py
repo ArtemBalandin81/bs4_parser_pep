@@ -6,7 +6,7 @@ LOG_DIR = BASE_DIR / 'logs'
 LOG_FILE = LOG_DIR / 'parser.log'
 PARSER_FILE = 'file'
 PARSER_PRETTY = 'pretty'
-RESULTS_DIR = BASE_DIR / 'results'
+RESULTS_DIR = 'results'
 
 INFO_ALL_VERSHIONS_NOT_FOUND = '"All versions" не найдены.'
 INFO_ARGS = 'Аргументы командной строки {}'

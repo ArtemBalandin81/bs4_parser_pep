@@ -42,7 +42,7 @@ from constants import (BASE_DIR, DOWNLOAD_DIR, EXPECTED_STATUS,
                        INFO_DIFFERENT_STATUS, INFO_DOWNLOAD, INFO_ERROR,
                        INFO_FINISH, INFO_START, INFO_URL_UNAVAILABLE,
                        MAIN_DOC_URL, PEPS_URL)
-from exceptions import ParserFindTagException, ParserFindKeyWordException
+from exceptions import ParserFindKeyWordException
 from outputs import control_output
 from utils import find_tag, get_soup
 

@@ -42,7 +42,7 @@ from constants import (BASE_DIR, DOWNLOAD_DIR, EXPECTED_STATUS,
                        INFO_DIFFERENT_STATUS, INFO_DOWNLOAD, INFO_ERROR,
                        INFO_FINISH, INFO_START, INFO_URL_UNAVAILABLE,
                        MAIN_DOC_URL, PEPS_URL)
-from exceptions import ParserFindTagException
+from exceptions import ParserFindTagException, ParserFindKeyWordException
 from outputs import control_output
 from utils import find_tag, get_soup
 
@@ -51,13 +51,13 @@ def whats_new(session):
     """Собирает ссылки на статьи об изменениях между основными версиями Python
      и достанете из них справочную информацию: имя автора (редактора) статьи"""
     whats_new_url = urljoin(MAIN_DOC_URL, 'whatsnew/')
-    sections_by_python = get_soup(session, whats_new_url).select(
+    reference_internal = get_soup(session, whats_new_url).select(
         '#what-s-new-in-python div.toctree-wrapper li.toctree-l1 >a'
     )
     results = [('Ссылка на статью', 'Заголовок', 'Редактор, Автор')]
     messages = []
-    for section in tqdm(sections_by_python, desc='sections_by_python'):
-        href = section['href']
+    for reference in tqdm(reference_internal, desc='reference_internal'):
+        href = reference['href']
         version_link = urljoin(whats_new_url, href)
         try:
             soup = get_soup(session, version_link)
@@ -84,7 +84,7 @@ def latest_versions(session):
             a_tags = ul.find_all('a')
             break
     else:
-        raise ParserFindTagException(INFO_ALL_VERSHIONS_NOT_FOUND)
+        raise ParserFindKeyWordException(INFO_ALL_VERSHIONS_NOT_FOUND)
     results = [('Ссылка на документацию', 'Версия', 'Статус')]
     pattern = r'Python (?P<version>\d\.\d+) \((?P<status>.*)\)'
     for a_tag in a_tags:
@@ -145,13 +145,14 @@ def pep(session):
             messages.append(
                 INFO_DIFFERENT_STATUS.format(
                     pep_link,
-                    {pep_status},
-                    {EXPECTED_STATUS[pep_table_status]}
+                    pep_status,
+                    EXPECTED_STATUS[pep_table_status]
                 )
             )
         total_status[pep_status] += 1
     for log in messages:
         logging.info(log)
+    # logging.info(*messages)  # не использую, т.к. запретил. Но работает же!
     return [
         ('Status', 'Quantities'),
         *total_status.items(),
